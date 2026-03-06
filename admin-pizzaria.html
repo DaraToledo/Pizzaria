@@ -110,9 +110,103 @@
     .toast.err{background:var(--red)}
     hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     @media(max-width:680px){.sidebar{display:none}.main{padding:20px 14px}.form-row{grid-template-columns:1fr}}
+
+    /* LOGIN SCREEN */
+    #login-screen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    #login-screen.hidden { display: none; }
+    .login-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 36px;
+      width: 100%; max-width: 400px;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    .login-logo {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+    .login-box h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: -0.3px;
+    }
+    .login-box p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+    .login-field {
+      display: flex; flex-direction: column;
+      gap: 6px; margin-bottom: 14px; text-align: left;
+    }
+    .login-field label {
+      font-size: 0.78rem; color: var(--muted); font-weight: 500;
+    }
+    .login-field input {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color .15s;
+      width: 100%;
+    }
+    .login-field input:focus { border-color: var(--accent); }
+    .btn-login {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background .15s;
+    }
+    .btn-login:hover { background: var(--accent2); }
+    .login-err {
+      color: #EF4444;
+      font-size: 0.8rem;
+      margin-top: 10px;
+      min-height: 20px;
+    }
   </style>
 </head>
 <body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🍕</div>
+    <h2>Painel Administrativo</h2>
+    <p>Entre com suas credenciais para continuar</p>
+    <div class="login-field">
+      <label>Usuário</label>
+      <input id="login-user" type="text" placeholder="admin" autocomplete="username" onkeydown="if(event.key==='Enter') fazerLogin()"/>
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') fazerLogin()"/>
+    </div>
+    <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
 
 <div class="topbar">
   <div class="brand">
@@ -126,6 +220,9 @@
     </button>
     <button class="btn btn-success btn-sm" onclick="salvarTudo()">
       💾 Salvar Tudo
+    </button>
+    <button class="btn btn-ghost btn-sm" onclick="logout()" title="Sair">
+      🚪 Sair
     </button>
   </div>
 </div>
@@ -557,7 +654,41 @@ document.querySelectorAll('.overlay').forEach(o=>{
   o.addEventListener('click', e=>{ if(e.target===o){ o.classList.remove('open'); editId=null; fotoB64=''; }});
 });
 
+// ── LOGIN ──
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'pizzaria2024'; // Altere aqui a senha desejada
+
+function fazerLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('login-err');
+  if (user === ADMIN_USER && pass === ADMIN_PASS) {
+    sessionStorage.setItem('adm_auth','1');
+    document.getElementById('login-screen').classList.add('hidden');
+    err.textContent = '';
+  } else {
+    err.textContent = '❌ Usuário ou senha incorretos.';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+  }
+}
+function logout() {
+  sessionStorage.removeItem('adm_auth');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+function verificarAuth() {
+  if (sessionStorage.getItem('adm_auth') !== '1') {
+    document.getElementById('login-screen').classList.remove('hidden');
+  } else {
+    document.getElementById('login-screen').classList.add('hidden');
+  }
+}
+
 init();
+verificarAuth();
 </script>
 </body>
 </html>
