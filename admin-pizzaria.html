@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin · Pizzaria</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0F1117;--surface:#1A1D27;--card:#22263A;--border:#2E334D;
+      --accent:#E8472A;--accent2:#FF6B4A;--green:#22C55E;--red:#EF4444;
+      --text:#E8EAF0;--muted:#6B7280;--radius:12px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+    /* TOPBAR */
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand-dot{width:10px;height:10px;background:var(--accent);border-radius:50%}
+    .brand span{font-weight:700;font-size:1rem}
+    .brand small{color:var(--muted);font-size:0.78rem;margin-left:4px}
+    .topbar-actions{display:flex;gap:8px}
+    /* BUTTONS */
+    .btn{border:none;cursor:pointer;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;text-decoration:none}
+    .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+    .btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:var(--accent2)}
+    .btn-success{background:var(--green);color:#fff}
+    .btn-success:hover{filter:brightness(1.1)}
+    .btn-danger-outline{background:transparent;color:var(--red);border:1px solid var(--red)}
+    .btn-danger-outline:hover{background:var(--red);color:#fff}
+    .btn-sm{padding:5px 10px;font-size:0.78rem}
+    .btn-icon{padding:0;width:30px;height:30px;justify-content:center;font-size:14px}
+    /* LAYOUT */
+    .layout{display:flex;flex:1}
+    /* SIDEBAR */
+    .sidebar{width:210px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:16px 10px;display:flex;flex-direction:column;gap:2px}
+    .sidebar-label{font-size:0.63rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:14px 10px 5px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:0.875rem;font-weight:500;transition:all .15s;user-select:none}
+    .nav-item:hover{background:var(--card);color:var(--text)}
+    .nav-item.active{background:rgba(232,71,42,0.15);color:var(--accent)}
+    /* MAIN */
+    .main{flex:1;padding:32px 28px;max-width:900px;overflow-y:auto}
+    .section{display:none}
+    .section.active{display:block}
+    .page-title{font-size:1.4rem;font-weight:700;margin-bottom:4px;letter-spacing:-0.4px}
+    .page-sub{font-size:0.85rem;color:var(--muted);margin-bottom:28px}
+    /* CARD */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:18px;font-weight:600}
+    /* FORMS */
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    .form-row.full{grid-template-columns:1fr}
+    .fg{display:flex;flex-direction:column;gap:6px}
+    .fg label{font-size:0.78rem;color:var(--muted);font-weight:500}
+    .fg input,.fg select,.fg textarea{background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:0.875rem;padding:9px 12px;outline:none;transition:border-color .15s;width:100%}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent)}
+    .fg textarea{resize:vertical;min-height:68px}
+    .fg select option{background:var(--card)}
+    /* LOGO ROW */
+    .logo-row{display:flex;align-items:center;gap:18px;margin-bottom:20px}
+    .logo-circle{width:76px;height:76px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:34px;background:var(--surface);overflow:hidden;flex-shrink:0}
+    .logo-circle img{width:100%;height:100%;object-fit:cover}
+    .logo-actions{display:flex;flex-direction:column;gap:8px}
+    .logo-actions small{font-size:0.72rem;color:var(--muted)}
+    .emoji-row{display:flex;align-items:center;gap:8px}
+    /* PRODUCT LIST */
+    .prod-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .tabs{display:flex;gap:6px}
+    .tab{padding:6px 14px;border-radius:6px;font-size:0.82rem;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;font-family:'Inter',sans-serif}
+    .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .prod-list{display:flex;flex-direction:column;gap:8px}
+    .prod-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;transition:border-color .15s}
+    .prod-item:hover{border-color:var(--muted)}
+    .prod-item.inactive{opacity:0.45}
+    .prod-thumb{width:50px;height:50px;border-radius:8px;object-fit:cover;background:var(--card);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+    .prod-thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+    .prod-info{flex:1;min-width:0}
+    .prod-info strong{font-size:0.88rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .prod-info span{font-size:0.76rem;color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+    .prod-price{font-weight:600;font-size:0.9rem;color:var(--accent2);white-space:nowrap;margin-right:4px}
+    .badge{font-size:0.68rem;font-weight:600;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+    .badge-on{background:rgba(34,197,94,.15);color:var(--green)}
+    .badge-off{background:rgba(239,68,68,.15);color:var(--red)}
+    .prod-actions{display:flex;gap:5px;flex-shrink:0}
+    /* TOGGLE */
+    .toggle{width:38px;height:21px;background:var(--border);border-radius:99px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:none}
+    .toggle::after{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s}
+    .toggle.on{background:var(--green)}
+    .toggle.on::after{transform:translateX(17px)}
+    /* MODAL */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:center;justify-content:center;padding:20px}
+    .overlay.open{display:flex}
+    .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:520px;animation:su .2s ease}
+    @keyframes su{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .modal h3{font-size:1.1rem;margin-bottom:2px}
+    .modal .msub{font-size:0.8rem;color:var(--muted);margin-bottom:20px}
+    .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+    /* IMG UPLOAD */
+    .upload-box{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .15s;position:relative;margin-bottom:10px}
+    .upload-box:hover{border-color:var(--accent)}
+    .upload-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .upload-box .prev-img{width:100%;max-height:130px;object-fit:cover;border-radius:8px;display:none}
+    .upload-box p{font-size:0.8rem;color:var(--muted)}
+    .upload-box p strong{color:var(--accent2)}
+    /* TOAST */
+    .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#fff;padding:11px 22px;border-radius:99px;font-size:0.85rem;font-weight:600;z-index:999;transition:transform .3s;pointer-events:none;white-space:nowrap}
+    .toast.show{transform:translateX(-50%) translateY(0)}
+    .toast.err{background:var(--red)}
+    hr{border:none;border-top:1px solid var(--border);margin:18px 0}
+    @media(max-width:680px){.sidebar{display:none}.main{padding:20px 14px}.form-row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <span>Painel Admin</span>
+    <small>· Pizzaria</small>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm" onclick="verCardapio()">
+      ↗ Ver Cardápio
+    </button>
+    <button class="btn btn-success btn-sm" onclick="salvarTudo()">
+      💾 Salvar Tudo
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-label">Configurar</div>
+    <div class="nav-item active" onclick="showSection('pizzaria',this)">🏠 Minha Pizzaria</div>
+    <div class="nav-item" onclick="showSection('produtos',this)">📦 Produtos</div>
+    <div class="sidebar-label">Ferramentas</div>
+    <div class="nav-item" onclick="exportar()">⬇ Exportar Backup</div>
+    <div class="nav-item" onclick="document.getElementById('imp').click()">⬆ Importar Backup</div>
+    <input type="file" id="imp" accept=".json" style="display:none" onchange="importar(event)"/>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── SEÇÃO PIZZARIA ── -->
+    <div class="section active" id="section-pizzaria">
+      <div class="page-title">🏠 Minha Pizzaria</div>
+      <div class="page-sub">Configure nome, logo e contato exibidos no cardápio.</div>
+
+      <div class="card">
+        <div class="card-title">Logo</div>
+        <div class="logo-row">
+          <div class="logo-circle" id="logo-circle">🍕</div>
+          <div class="logo-actions">
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+              📁 Enviar imagem
+              <input type="file" accept="image/*" style="display:none" onchange="uploadLogo(event)"/>
+            </label>
+            <div class="emoji-row">
+              <small>Ou emoji:</small>
+              <input id="inp-emoji" type="text" style="width:48px;text-align:center;font-size:1.2rem;padding:4px 6px;" placeholder="🍕" oninput="previewEmoji()"/>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="limparLogo()">✕ Remover imagem</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="fg">
+            <label>Nome da Pizzaria</label>
+            <input id="inp-nome" type="text" placeholder="Bella Notte"/>
+          </div>
+          <div class="fg">
+            <label>Slogan / Subtítulo</label>
+            <input id="inp-slogan" type="text" placeholder="Pizzaria Artesanal · Desde 1998"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">WhatsApp & Contato</div>
+        <div class="form-row">
+          <div class="fg">
+            <label>Número WhatsApp (DDI+DDD+número, só dígitos)</label>
+            <input id="inp-wp" type="text" placeholder="5511999999999"/>
+          </div>
+          <div class="fg">
+            <label>Texto da barra de aviso</label>
+            <input id="inp-barra" type="text" placeholder="Pedidos também pelo WhatsApp:"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO PRODUTOS ── -->
+    <div class="section" id="section-produtos">
+      <div class="page-title">📦 Produtos</div>
+      <div class="page-sub">Adicione, edite, ative/inative ou exclua itens do cardápio.</div>
+
+      <div class="card">
+        <div class="prod-header">
+          <div class="tabs">
+            <button class="tab active" id="tab-p" onclick="showTab('p')">🍕 Pizzas</button>
+            <button class="tab" id="tab-b" onclick="showTab('b')">🥤 Bebidas</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="abrirModal(null)">+ Novo produto</button>
+        </div>
+        <div id="lista-p" class="prod-list"></div>
+        <div id="lista-b" class="prod-list" style="display:none"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL PRODUTO -->
+<div class="overlay" id="ov-prod">
+  <div class="modal">
+    <h3 id="m-titulo">Novo Produto</h3>
+    <div class="msub" id="m-sub">Preencha os campos abaixo.</div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Nome</label>
+        <input id="m-nome" type="text" placeholder="Ex: Calabresa"/>
+      </div>
+      <div class="fg">
+        <label>Tipo</label>
+        <select id="m-tipo">
+          <option value="pizza">🍕 Pizza</option>
+          <option value="bebida">🥤 Bebida</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Preço (R$)</label>
+        <input id="m-preco" type="number" step="0.01" min="0" placeholder="0,00"/>
+      </div>
+      <div class="fg">
+        <label>Emoji (fallback sem foto)</label>
+        <input id="m-emoji" type="text" placeholder="🍕"/>
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="fg">
+        <label>Descrição</label>
+        <textarea id="m-desc" placeholder="Ex: Calabresa fatiada, cebola e azeitonas"></textarea>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Foto do Produto</label>
+      <div class="upload-box" id="upload-box">
+        <input type="file" accept="image/*" onchange="uploadFoto(event)"/>
+        <img class="prev-img" id="m-prev" alt=""/>
+        <p id="upload-ph"><strong>Clique para enviar</strong> uma foto<br/>JPG, PNG ou WEBP</p>
+      </div>
+      <div class="fg">
+        <label>Ou cole uma URL de imagem</label>
+        <input id="m-url" type="text" placeholder="https://..." oninput="previewUrl()"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarProduto()">Salvar Produto</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EXCLUIR -->
+<div class="overlay" id="ov-del">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div style="font-size:46px;margin-bottom:10px">🗑️</div>
+    <h3>Excluir produto?</h3>
+    <p class="msub" id="del-nome" style="margin-top:4px"></p>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:20px">Essa ação não pode ser desfeita.</p>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-ghost" onclick="fecharDel()">Cancelar</button>
+      <button class="btn btn-danger-outline" onclick="confirmarDel()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY = 'pizzaria_config_v1';
+
+const DEF = {
+  nome:'Bella Notte', slogan:'Pizzaria Artesanal · Desde 1998',
+  whatsapp:'5511999999999', barra:'Pedidos também pelo WhatsApp:',
+  logoEmoji:'🍕', logoImg:'',
+  pizzas:[
+    {id:'p1',nome:'Calabresa',         emoji:'🍕',foto:'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&q=80',desc:'Calabresa fatiada, cebola e azeitonas',preco:49.90,ativo:true},
+    {id:'p2',nome:'Mussarela',          emoji:'🧀',foto:'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&q=80',desc:'Mussarela derretida, tomate e manjericão',preco:44.90,ativo:true},
+    {id:'p3',nome:'Frango c/ Catupiry', emoji:'🐔',foto:'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',desc:'Frango desfiado com catupiry cremoso',preco:54.90,ativo:true},
+    {id:'p4',nome:'Portuguesa',         emoji:'🥚',foto:'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&q=80',desc:'Presunto, ovos, cebola, azeitonas e ervilhas',preco:52.90,ativo:true},
+    {id:'p5',nome:'Quatro Queijos',     emoji:'🫕',foto:'https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=600&q=80',desc:'Mussarela, parmesão, gorgonzola e cheddar',preco:59.90,ativo:true},
+    {id:'p6',nome:'Pepperoni',          emoji:'🌶️',foto:'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=600&q=80',desc:'Generoso pepperoni com mussarela especial',preco:57.90,ativo:true},
+  ],
+  bebidas:[
+    {id:'b1',nome:'Coca-Cola 2L',   emoji:'🥤',foto:'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600&q=80', desc:'Geladinha e refrescante',preco:12.90,ativo:true},
+    {id:'b2',nome:'Dolly Cola 2L',  emoji:'🧃',foto:'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&q=80',desc:'A famosa guaraná da galera',preco:8.90,ativo:true},
+    {id:'b3',nome:'Água Mineral',   emoji:'💧',foto:'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=600&q=80', desc:'500ml sem gás',preco:4.00,ativo:true},
+    {id:'b4',nome:'Suco de Laranja',emoji:'🍊',foto:'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600&q=80',desc:'Natural, 500ml',preco:9.90,ativo:true},
+  ]
+};
+
+let cfg = JSON.parse(JSON.stringify(DEF));
+let editId = null, delId = null, delTipo = null, fotoB64 = '';
+
+// ── INIT ──
+function init() {
+  try { const r = localStorage.getItem(KEY); if(r) cfg = JSON.parse(r); } catch(e){}
+  preencherForm();
+}
+
+function preencherForm() {
+  document.getElementById('inp-nome').value  = cfg.nome    || '';
+  document.getElementById('inp-slogan').value= cfg.slogan  || '';
+  document.getElementById('inp-wp').value    = cfg.whatsapp|| '';
+  document.getElementById('inp-barra').value = cfg.barra   || '';
+  document.getElementById('inp-emoji').value = cfg.logoImg ? '' : (cfg.logoEmoji || '🍕');
+  atualizarCirculo();
+}
+
+// ── LOGO ──
+function atualizarCirculo() {
+  const c = document.getElementById('logo-circle');
+  if (cfg.logoImg) c.innerHTML = '<img src="'+cfg.logoImg+'" alt="logo"/>';
+  else c.textContent = cfg.logoEmoji || '🍕';
+}
+function uploadLogo(e) {
+  const f = e.target.files[0]; if(!f) return;
+  if(f.size > 2*1024*1024){ toast('Imagem muito grande (máx 2MB)',true); return; }
+  const r = new FileReader();
+  r.onload = ev => { cfg.logoImg = ev.target.result; cfg.logoEmoji = ''; atualizarCirculo(); };
+  r.readAsDataURL(f);
+}
+function previewEmoji() {
+  const v = document.getElementById('inp-emoji').value;
+  cfg.logoEmoji = v; cfg.logoImg = ''; atualizarCirculo();
+}
+function limparLogo() {
+  cfg.logoImg = ''; cfg.logoEmoji = '🍕';
+  document.getElementById('inp-emoji').value = '🍕';
+  atualizarCirculo();
+}
+
+// ── NAVEGAÇÃO ──
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='produtos') renderListas();
+}
+function showTab(t) {
+  document.getElementById('lista-p').style.display = t==='p'?'flex':'none';
+  document.getElementById('lista-b').style.display = t==='b'?'flex':'none';
+  document.getElementById('tab-p').classList.toggle('active', t==='p');
+  document.getElementById('tab-b').classList.toggle('active', t==='b');
+}
+
+// ── LISTAS ──
+function renderListas() {
+  renderArr(cfg.pizzas,  'lista-p', 'pizza');
+  renderArr(cfg.bebidas, 'lista-b', 'bebida');
+}
+function renderArr(arr, id, tipo) {
+  const el = document.getElementById(id);
+  if(!arr.length){ el.innerHTML='<div style="color:var(--muted);font-size:0.85rem;padding:10px">Nenhum produto.</div>'; return; }
+  el.innerHTML = arr.map(item=>`
+    <div class="prod-item ${item.ativo?'':'inactive'}" id="row-${item.id}">
+      <div class="prod-thumb">
+        ${item.foto ? '<img src="'+item.foto+'" alt="'+item.nome+'" onerror="this.style.display=\'none\'">' : (item.emoji||'🍕')}
+      </div>
+      <div class="prod-info">
+        <strong>${tipo==='pizza'?'Pizza de ':''} ${item.nome}</strong>
+        <span>${item.desc||''}</span>
+      </div>
+      <span class="prod-price">R$ ${Number(item.preco).toFixed(2).replace('.',',')}</span>
+      <span class="badge ${item.ativo?'badge-on':'badge-off'}">${item.ativo?'Ativo':'Inativo'}</span>
+      <div class="prod-actions">
+        <button class="toggle ${item.ativo?'on':''}" title="Ativar/Inativar" onclick="toggleAtivo('${item.id}','${tipo}')"></button>
+        <button class="btn btn-ghost btn-icon" title="Editar" onclick="abrirModal('${item.id}','${tipo}')">✏️</button>
+        <button class="btn btn-ghost btn-icon" title="Excluir" onclick="abrirDel('${item.id}','${tipo}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+function toggleAtivo(id, tipo) {
+  const arr = tipo==='pizza' ? cfg.pizzas : cfg.bebidas;
+  const item = arr.find(i=>i.id===id);
+  if(item) item.ativo = !item.ativo;
+  renderListas();
+}
+
+// ── MODAL PRODUTO ──
+function abrirModal(id, tipo) {
+  editId = id; fotoB64 = '';
+  const prev = document.getElementById('m-prev');
+  const ph   = document.getElementById('upload-ph');
+  prev.style.display='none'; ph.style.display='block';
+  document.getElementById('m-url').value = '';
+
+  if(id) {
+    const arr  = tipo==='pizza' ? cfg.pizzas : cfg.bebidas;
+    const item = arr.find(i=>i.id===id);
+    document.getElementById('m-titulo').textContent = 'Editar Produto';
+    document.getElementById('m-sub').textContent    = 'Editando: '+item.nome;
+    document.getElementById('m-nome').value  = item.nome  ||'';
+    document.getElementById('m-tipo').value  = tipo;
+    document.getElementById('m-preco').value = item.preco ||'';
+    document.getElementById('m-emoji').value = item.emoji ||'';
+    document.getElementById('m-desc').value  = item.desc  ||'';
+    if(item.foto){
+      prev.src = item.foto; prev.style.display='block'; ph.style.display='none';
+      if(item.foto.startsWith('data:')) fotoB64 = item.foto;
+      else document.getElementById('m-url').value = item.foto;
+    }
+  } else {
+    document.getElementById('m-titulo').textContent = 'Novo Produto';
+    document.getElementById('m-sub').textContent    = 'Preencha os campos abaixo.';
+    document.getElementById('m-nome').value  = '';
+    document.getElementById('m-tipo').value  = 'pizza';
+    document.getElementById('m-preco').value = '';
+    document.getElementById('m-emoji').value = '🍕';
+    document.getElementById('m-desc').value  = '';
+  }
+  document.getElementById('ov-prod').classList.add('open');
+}
+function fecharModal() { document.getElementById('ov-prod').classList.remove('open'); editId=null; fotoB64=''; }
+
+function uploadFoto(e) {
+  const f = e.target.files[0]; if(!f) return;
+  if(f.size > 4*1024*1024){ toast('Imagem muito grande (máx 4MB)',true); return; }
+  const r = new FileReader();
+  r.onload = ev => {
+    fotoB64 = ev.target.result;
+    const p = document.getElementById('m-prev');
+    p.src = fotoB64; p.style.display='block';
+    document.getElementById('upload-ph').style.display='none';
+    document.getElementById('m-url').value='';
+  };
+  r.readAsDataURL(f);
+}
+function previewUrl() {
+  const url = document.getElementById('m-url').value.trim();
+  if(!url) return;
+  fotoB64 = '';
+  const p = document.getElementById('m-prev');
+  p.src = url; p.style.display='block';
+  document.getElementById('upload-ph').style.display='none';
+}
+
+function salvarProduto() {
+  const nome  = document.getElementById('m-nome').value.trim();
+  const tipo  = document.getElementById('m-tipo').value;
+  const preco = parseFloat(document.getElementById('m-preco').value);
+  const emoji = document.getElementById('m-emoji').value.trim() || '🍕';
+  const desc  = document.getElementById('m-desc').value.trim();
+  const url   = document.getElementById('m-url').value.trim();
+  const foto  = fotoB64 || url || '';
+
+  if(!nome){ toast('Informe o nome!',true); return; }
+  if(isNaN(preco)||preco<=0){ toast('Informe um preço válido!',true); return; }
+
+  if(editId) {
+    // encontra onde está (pode ter mudado de tipo)
+    let item = cfg.pizzas.find(i=>i.id===editId);
+    let origTipo = 'pizza';
+    if(!item){ item = cfg.bebidas.find(i=>i.id===editId); origTipo='bebida'; }
+    if(item){
+      Object.assign(item,{nome,preco,emoji,desc,foto});
+      // mudou de tipo? move entre arrays
+      if(origTipo !== tipo){
+        if(origTipo==='pizza'){ cfg.pizzas=cfg.pizzas.filter(i=>i.id!==editId); cfg.bebidas.push(item); }
+        else                  { cfg.bebidas=cfg.bebidas.filter(i=>i.id!==editId); cfg.pizzas.push(item); }
+      }
+    }
+  } else {
+    const novoId = (tipo==='pizza'?'p':'b')+Date.now();
+    const novoItem = {id:novoId,nome,preco,emoji,desc,foto,ativo:true};
+    if(tipo==='pizza') cfg.pizzas.push(novoItem);
+    else               cfg.bebidas.push(novoItem);
+  }
+
+  fecharModal();
+  renderListas();
+  toast('Produto salvo! Clique em "Salvar Tudo" para aplicar no cardápio.');
+}
+
+// ── EXCLUIR ──
+function abrirDel(id, tipo) {
+  delId=id; delTipo=tipo;
+  const arr  = tipo==='pizza' ? cfg.pizzas : cfg.bebidas;
+  const item = arr.find(i=>i.id===id);
+  document.getElementById('del-nome').textContent = item ? item.nome : '';
+  document.getElementById('ov-del').classList.add('open');
+}
+function fecharDel() { document.getElementById('ov-del').classList.remove('open'); delId=null; delTipo=null; }
+function confirmarDel() {
+  if(!delId) return;
+  if(delTipo==='pizza') cfg.pizzas  = cfg.pizzas.filter(i=>i.id!==delId);
+  else                  cfg.bebidas = cfg.bebidas.filter(i=>i.id!==delId);
+  fecharDel(); renderListas();
+  toast('Produto excluído. Clique em "Salvar Tudo" para confirmar.');
+}
+
+// ── SALVAR ──
+function salvarTudo() {
+  cfg.nome     = document.getElementById('inp-nome').value.trim()  || cfg.nome;
+  cfg.slogan   = document.getElementById('inp-slogan').value.trim();
+  cfg.whatsapp = document.getElementById('inp-wp').value.replace(/\D/g,'');
+  cfg.barra    = document.getElementById('inp-barra').value.trim();
+  try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch(e){}
+  toast('✅ Tudo salvo! O cardápio já está atualizado.');
+}
+
+// ── BACKUP ──
+function exportar() {
+  salvarTudo();
+  const b = new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download='backup-pizzaria.json'; a.click();
+  toast('Backup exportado!');
+}
+function importar(e) {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      cfg = JSON.parse(ev.target.result);
+      localStorage.setItem(KEY, JSON.stringify(cfg));
+      preencherForm(); renderListas();
+      toast('Backup importado com sucesso!');
+    } catch(err){ toast('Arquivo inválido!',true); }
+  };
+  r.readAsText(f); e.target.value='';
+}
+
+// ── CARDÁPIO ──
+function verCardapio() {
+  salvarTudo();
+  window.open('cardapio-pizzaria.html','_blank');
+}
+
+// ── TOAST ──
+function toast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast'+(err?' err':'');
+  requestAnimationFrame(()=>{ t.classList.add('show'); });
+  setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+// fechar overlay clicando fora
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click', e=>{ if(e.target===o){ o.classList.remove('open'); editId=null; fotoB64=''; }});
+});
+
+init();
+</script>
+</body>
+</html>

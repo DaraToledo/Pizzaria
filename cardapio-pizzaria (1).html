@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pizzaria Bella Notte</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #C8251A;
+      --red-dark: #8B1510;
+      --cream: #FDF6EC;
+      --warm: #F5E6CC;
+      --charcoal: #1A1612;
+      --brown: #5C3D2E;
+      --gold: #D4A017;
+      --text: #2D1F14;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HERO */
+    header {
+      background: var(--charcoal);
+      position: relative;
+      overflow: hidden;
+      padding: 60px 20px 50px;
+      text-align: center;
+    }
+    header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(200,37,26,0.35) 0%, transparent 70%);
+    }
+    header::after {
+      content: '🍕';
+      position: absolute;
+      font-size: 220px;
+      opacity: 0.04;
+      top: -20px; right: -30px;
+      transform: rotate(-20deg);
+      pointer-events: none;
+    }
+    .logo-badge {
+      display: inline-block;
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      width: 80px; height: 80px;
+      line-height: 76px;
+      font-size: 36px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      color: #fff;
+      letter-spacing: -1px;
+      line-height: 1;
+      position: relative;
+    }
+    header h1 em {
+      font-style: italic;
+      color: var(--gold);
+    }
+    header p {
+      color: rgba(255,255,255,0.55);
+      font-size: 0.95rem;
+      margin-top: 10px;
+      font-weight: 300;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      position: relative;
+    }
+
+    /* WHATSAPP NUMBER */
+    .whatsapp-bar {
+      background: var(--red);
+      text-align: center;
+      padding: 10px;
+      font-size: 0.85rem;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .whatsapp-bar span { font-weight: 500; }
+
+    /* SECTION TITLES */
+    .section-title {
+      text-align: center;
+      padding: 44px 20px 10px;
+    }
+    .section-title h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      color: var(--charcoal);
+    }
+    .section-title p {
+      font-size: 0.85rem;
+      color: var(--brown);
+      margin-top: 4px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      max-width: 300px; margin: 14px auto 0;
+    }
+    .divider span { flex: 1; height: 1px; background: var(--gold); opacity: .5; }
+    .divider i { color: var(--gold); font-size: 0.9rem; }
+
+    /* GRID */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    /* CARD */
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+      transition: transform .2s, box-shadow .2s;
+      cursor: pointer;
+      position: relative;
+      border: 2px solid transparent;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+    .card.selected {
+      border-color: var(--red);
+      box-shadow: 0 0 0 4px rgba(200,37,26,0.12);
+    }
+    .card.selected .check {
+      opacity: 1; transform: scale(1);
+    }
+
+    .check {
+      position: absolute;
+      top: 12px; right: 12px;
+      width: 32px; height: 32px;
+      background: var(--red);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 16px;
+      opacity: 0; transform: scale(0.5);
+      transition: opacity .2s, transform .2s;
+      z-index: 2;
+    }
+
+    .card-thumb {
+      display: block;
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: var(--warm);
+    }
+    .card-thumb.emoji-mode {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      height: 160px;
+    }
+
+    .card-body { padding: 16px 18px 20px; }
+    .card-body h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      margin-bottom: 4px;
+    }
+    .card-body p {
+      font-size: 0.82rem;
+      color: #888;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .price {
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: var(--red);
+    }
+
+    /* QTY CONTROL */
+    .qty-control {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .card.selected .qty-control { display: flex; }
+    .qty-btn {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid var(--red);
+      background: transparent;
+      color: var(--red);
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, color .15s;
+    }
+    .qty-btn:hover { background: var(--red); color: #fff; }
+    .qty-num {
+      font-size: 1.1rem;
+      font-weight: 600;
+      min-width: 24px; text-align: center;
+    }
+
+    /* STICKY FOOTER */
+    .sticky-footer {
+      position: sticky;
+      bottom: 0;
+      background: var(--charcoal);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 100;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+    }
+    .footer-info {
+      display: flex; flex-direction: column;
+    }
+    .footer-items {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: .5px;
+    }
+    .footer-total {
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: #fff;
+    }
+    .footer-total span { color: var(--gold); }
+
+    .btn-confirm {
+      background: #25D366;
+      color: #fff;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
+      transition: background .2s, transform .15s;
+      white-space: nowrap;
+    }
+    .btn-confirm:hover { background: #1ebe5a; transform: scale(1.03); }
+    .btn-confirm:disabled { background: #555; cursor: not-allowed; transform: none; }
+    .btn-confirm svg { flex-shrink: 0; }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 20px;
+      padding: 36px 32px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      animation: popIn .3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-icon { font-size: 60px; margin-bottom: 12px; }
+    .modal h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+      color: var(--charcoal);
+    }
+    .modal .pedido-num {
+      font-size: 0.85rem;
+      color: #999;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .modal-items {
+      background: var(--cream);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+    .modal-items li {
+      list-style: none;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      font-size: 0.9rem;
+      display: flex; justify-content: space-between;
+    }
+    .modal-items li:last-child { border: none; }
+    .modal-total {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--red);
+      margin-bottom: 24px;
+    }
+    .btn-wp {
+      width: 100%;
+      background: #25D366;
+      color: #fff;
+      border: none;
+      padding: 16px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .btn-cancel {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: #999;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 8px;
+    }
+    .btn-cancel:hover { color: var(--red); }
+
+    @media (max-width: 520px) {
+      .sticky-footer { flex-direction: column; gap: 12px; }
+      .btn-confirm { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge" id="logo-badge">🍕</div>
+  <h1 id="header-nome">Bella <em>Notte</em></h1>
+  <p id="header-slogan">Pizzaria Artesanal · Desde 1998</p>
+</header>
+
+<div class="whatsapp-bar" id="whatsapp-bar">
+  Pedidos também pelo WhatsApp: <span id="whatsapp-num">(11) 99999-9999</span>
+</div>
+
+<!-- PIZZAS -->
+<div class="section-title">
+  <p>Nosso cardápio</p>
+  <h2>Pizzas Tradicionais</h2>
+  <div class="divider"><span></span><i>🍅</i><span></span></div>
+</div>
+
+<div class="grid" id="grid-pizzas"></div>
+
+<!-- BEBIDAS -->
+<div class="section-title">
+  <h2>Bebidas</h2>
+  <div class="divider"><span></span><i>🥤</i><span></span></div>
+</div>
+
+<div class="grid" id="grid-bebidas"></div>
+
+<div style="height:100px"></div>
+
+<!-- STICKY FOOTER -->
+<div class="sticky-footer" id="footer">
+  <div class="footer-info">
+    <span class="footer-items" id="footer-items">Nenhum item selecionado</span>
+    <span class="footer-total">Total: <span id="footer-total">R$ 0,00</span></span>
+  </div>
+  <button class="btn-confirm" id="btn-confirm" disabled onclick="abrirModal()">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.848L.073 23.27a.75.75 0 0 0 .917.917l5.422-1.459A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.502-5.17-1.38l-.371-.214-3.857 1.037 1.037-3.857-.214-.371A9.945 9.945 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+    Confirmar Pedido
+  </button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <h2>Resumo do Pedido</h2>
+    <p class="pedido-num" id="modal-num">Pedido #0000</p>
+    <ul class="modal-items" id="modal-items"></ul>
+    <p class="modal-total" id="modal-total"></p>
+    <button class="btn-wp" onclick="enviarWhatsApp()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.848L.073 23.27a.75.75 0 0 0 .917.917l5.422-1.459A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.502-5.17-1.38l-.371-.214-3.857 1.037 1.037-3.857-.214-.371A9.945 9.945 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      Enviar pelo WhatsApp
+    </button>
+    <button class="btn-cancel" onclick="fecharModal()">← Voltar e editar</button>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'pizzaria_config_v1';
+
+  const DEFAULTS = {
+    nome: 'Bella Notte', slogan: 'Pizzaria Artesanal · Desde 1998',
+    whatsapp: '5511999999999', barra: 'Pedidos também pelo WhatsApp:',
+    logoEmoji: '🍕', logoImg: '',
+    pizzas: [
+      { id:'p1', nome:'Calabresa',         emoji:'🍕', foto:'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&q=80', desc:'Calabresa fatiada, cebola e azeitonas',         preco:49.90, ativo:true },
+      { id:'p2', nome:'Mussarela',          emoji:'🧀', foto:'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&q=80', desc:'Mussarela derretida, tomate e manjericão',      preco:44.90, ativo:true },
+      { id:'p3', nome:'Frango c/ Catupiry', emoji:'🐔', foto:'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80', desc:'Frango desfiado com catupiry cremoso',          preco:54.90, ativo:true },
+      { id:'p4', nome:'Portuguesa',         emoji:'🥚', foto:'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&q=80', desc:'Presunto, ovos, cebola, azeitonas e ervilhas', preco:52.90, ativo:true },
+      { id:'p5', nome:'Quatro Queijos',     emoji:'🫕', foto:'https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=600&q=80', desc:'Mussarela, parmesão, gorgonzola e cheddar',    preco:59.90, ativo:true },
+      { id:'p6', nome:'Pepperoni',          emoji:'🌶️', foto:'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=600&q=80', desc:'Generoso pepperoni com mussarela especial',    preco:57.90, ativo:true },
+    ],
+    bebidas: [
+      { id:'b1', nome:'Coca-Cola 2L',    emoji:'🥤', foto:'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600&q=80',  desc:'Geladinha e refrescante',    preco:12.90, ativo:true },
+      { id:'b2', nome:'Dolly Cola 2L',   emoji:'🧃', foto:'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&q=80', desc:'A famosa guaraná da galera', preco:8.90,  ativo:true },
+      { id:'b3', nome:'Água Mineral',    emoji:'💧', foto:'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=600&q=80',  desc:'500ml sem gás',              preco:4.00,  ativo:true },
+      { id:'b4', nome:'Suco de Laranja', emoji:'🍊', foto:'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600&q=80', desc:'Natural, 500ml',             preco:9.90,  ativo:true },
+    ]
+  };
+
+  // Carrega config do admin ou usa padrão
+  let cfg = DEFAULTS;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) cfg = JSON.parse(saved);
+  } catch(e) {}
+
+  const PIZZAS  = cfg.pizzas.filter(p => p.ativo !== false);
+  const BEBIDAS = cfg.bebidas.filter(b => b.ativo !== false);
+  const WHATSAPP_NUMBER = cfg.whatsapp || DEFAULTS.whatsapp;
+
+  // Aplica info no header
+  (function aplicarBranding() {
+    // Nome: primeira palavra normal, resto em itálico
+    const partes = (cfg.nome || 'Bella Notte').split(' ');
+    const h1 = document.getElementById('header-nome');
+    if (partes.length > 1) {
+      h1.innerHTML = partes[0] + ' <em>' + partes.slice(1).join(' ') + '</em>';
+    } else {
+      h1.textContent = cfg.nome;
+    }
+    document.getElementById('header-slogan').textContent = cfg.slogan || '';
+    document.getElementById('whatsapp-bar').childNodes[0].textContent = (cfg.barra || '') + ' ';
+    document.getElementById('whatsapp-num').textContent = cfg.whatsapp || '';
+
+    const badge = document.getElementById('logo-badge');
+    if (cfg.logoImg) {
+      badge.innerHTML = `<img src="${cfg.logoImg}" alt="logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    } else {
+      badge.textContent = cfg.logoEmoji || '🍕';
+    }
+    document.title = cfg.nome || 'Pizzaria';
+  })();
+
+  let cart = {};
+  let pedidoNum = null;
+
+  function gerarNumeroPedido() {
+    return String(Math.floor(1000 + Math.random() * 9000));
+  }
+
+  function todosItens() { return [...PIZZAS, ...BEBIDAS]; }
+
+  function nomeLabel(item) {
+    const isPizza = PIZZAS.find(p => p.id === item.id);
+    return isPizza ? `Pizza de ${item.nome}` : item.nome;
+  }
+
+  function toggleItem(id) {
+    if (cart[id]) {
+      delete cart[id];
+      document.getElementById('card-'+id).classList.remove('selected');
+    } else {
+      cart[id] = 1;
+      document.getElementById('card-'+id).classList.add('selected');
+      document.getElementById('qty-'+id).textContent = 1;
+    }
+    updateFooter();
+  }
+
+  function changeQty(e, id, delta) {
+    e.stopPropagation();
+    if (!cart[id]) return;
+    cart[id] = Math.max(1, (cart[id] || 1) + delta);
+    document.getElementById('qty-'+id).textContent = cart[id];
+    updateFooter();
+  }
+
+  function updateFooter() {
+    const ids = Object.keys(cart);
+    const all = todosItens();
+    let total = 0, totalItens = 0;
+    ids.forEach(id => {
+      const item = all.find(i => i.id === id);
+      if (item) { total += item.preco * cart[id]; totalItens += cart[id]; }
+    });
+    document.getElementById('footer-items').textContent =
+      totalItens === 0 ? 'Nenhum item selecionado' : `${totalItens} item(s) selecionado(s)`;
+    document.getElementById('footer-total').textContent = 'R$ ' + total.toFixed(2).replace('.',',');
+    document.getElementById('btn-confirm').disabled = totalItens === 0;
+  }
+
+  function abrirModal() {
+    const ids = Object.keys(cart);
+    if (!ids.length) return;
+    pedidoNum = gerarNumeroPedido();
+    const all = todosItens();
+    let total = 0;
+    const ul = document.getElementById('modal-items');
+    ul.innerHTML = ids.map(id => {
+      const item = all.find(i => i.id === id);
+      const subtotal = item.preco * cart[id];
+      total += subtotal;
+      return `<li><span>${cart[id]}x ${nomeLabel(item)}</span><span>R$ ${subtotal.toFixed(2).replace('.',',')}</span></li>`;
+    }).join('');
+    document.getElementById('modal-num').textContent = `Pedido nº ${pedidoNum}`;
+    document.getElementById('modal-total').textContent = `Total: R$ ${total.toFixed(2).replace('.',',')}`;
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function fecharModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  function enviarWhatsApp() {
+    const ids = Object.keys(cart);
+    const all = todosItens();
+    const linhas = ids.map(id => {
+      const item = all.find(i => i.id === id);
+      return `${cart[id]}x ${nomeLabel(item)}`;
+    });
+    let total = 0;
+    ids.forEach(id => {
+      const item = all.find(i => i.id === id);
+      if (item) total += item.preco * cart[id];
+    });
+    const msg =
+      `✅ *Pedido feito com sucesso!*\n` +
+      `📋 Pedido nº ${pedidoNum}\n\n` +
+      `*Itens:*\n` +
+      linhas.map(l => `• ${l}`).join('\n') +
+      `\n\n💰 *Total: R$ ${total.toFixed(2).replace('.',',')}*\n\n` +
+      `Aguardo confirmação! 😊`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+    fecharModal();
+  }
+
+  function renderAll() {
+    const pizzaContainer = document.getElementById('grid-pizzas');
+    pizzaContainer.innerHTML = PIZZAS.map(item => `
+      <div class="card" id="card-${item.id}" onclick="toggleItem('${item.id}')">
+        <div class="check">✓</div>
+        ${item.foto
+          ? `<img class="card-thumb" src="${item.foto}" alt="${item.nome}" onerror="this.outerHTML='<div class=\\'card-thumb emoji-mode\\'>${item.emoji}</div>'">`
+          : `<div class="card-thumb emoji-mode">${item.emoji}</div>`}
+        <div class="card-body">
+          <h3>Pizza de ${item.nome}</h3>
+          <p>${item.desc}</p>
+          <div class="price">R$ ${Number(item.preco).toFixed(2).replace('.',',')}</div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(event,'${item.id}',-1)">−</button>
+            <span class="qty-num" id="qty-${item.id}">1</span>
+            <button class="qty-btn" onclick="changeQty(event,'${item.id}',+1)">+</button>
+          </div>
+        </div>
+      </div>`).join('');
+
+    const bebContainer = document.getElementById('grid-bebidas');
+    bebContainer.innerHTML = BEBIDAS.map(item => `
+      <div class="card" id="card-${item.id}" onclick="toggleItem('${item.id}')">
+        <div class="check">✓</div>
+        ${item.foto
+          ? `<img class="card-thumb" src="${item.foto}" alt="${item.nome}" onerror="this.outerHTML='<div class=\\'card-thumb emoji-mode\\'>${item.emoji}</div>'">`
+          : `<div class="card-thumb emoji-mode">${item.emoji}</div>`}
+        <div class="card-body">
+          <h3>${item.nome}</h3>
+          <p>${item.desc}</p>
+          <div class="price">R$ ${Number(item.preco).toFixed(2).replace('.',',')}</div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(event,'${item.id}',-1)">−</button>
+            <span class="qty-num" id="qty-${item.id}">1</span>
+            <button class="qty-btn" onclick="changeQty(event,'${item.id}',+1)">+</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  renderAll();
+  updateFooter();
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) fecharModal();
+  });
+</script>
+</body>
+</html>
