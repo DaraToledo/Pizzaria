@@ -34,29 +34,39 @@
       padding: 60px 20px 50px;
       text-align: center;
     }
+    .header-bg {
+      position: absolute; inset: 0;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      overflow: hidden;
+    }
+    .header-bg span {
+      font-size: 90px;
+      display: flex; align-items: center; justify-content: center;
+      filter: blur(3px) saturate(0.4);
+      opacity: 0.07;
+      transform: rotate(-15deg);
+    }
+    .header-bg span:nth-child(even) { transform: rotate(10deg); opacity: 0.05; }
     header::before {
       content: '';
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 50% 0%, rgba(200,37,26,0.35) 0%, transparent 70%);
+      background: 
+        radial-gradient(ellipse at 50% 50%, rgba(139,21,16,0.85) 0%, rgba(26,22,18,0.95) 70%);
+      z-index: 1;
     }
-    header::after {
-      content: '🍕';
-      position: absolute;
-      font-size: 220px;
-      opacity: 0.04;
-      top: -20px; right: -30px;
-      transform: rotate(-20deg);
-      pointer-events: none;
-    }
+    header > *:not(.header-bg) { position: relative; z-index: 2; }
     .logo-badge {
       display: inline-block;
-      border: 2px solid var(--gold);
+      border: 3px solid var(--gold);
       border-radius: 50%;
-      width: 80px; height: 80px;
-      line-height: 76px;
-      font-size: 36px;
-      margin-bottom: 16px;
+      width: 120px; height: 120px;
+      line-height: 114px;
+      font-size: 54px;
+      margin-bottom: 20px;
       position: relative;
+      box-shadow: 0 0 0 6px rgba(212,160,23,0.15), 0 8px 32px rgba(0,0,0,0.4);
     }
     header h1 {
       font-family: 'Playfair Display', serif;
@@ -355,6 +365,11 @@
 <body>
 
 <header>
+  <div class="header-bg" aria-hidden="true">
+    <span>🍕</span><span>🍕</span><span>🍕</span><span>🍕</span><span>🍕</span><span>🍕</span>
+    <span>🍕</span><span>🍕</span><span>🍕</span><span>🍕</span><span>🍕</span><span>🍕</span>
+    <span>🍕</span><span>🍕</span><span>🍕</span><span>🍕</span><span>🍕</span><span>🍕</span>
+  </div>
   <div class="logo-badge" id="logo-badge">🍕</div>
   <h1 id="header-nome">Bella <em>Notte</em></h1>
   <p id="header-slogan">Pizzaria Artesanal · Desde 1998</p>
@@ -497,8 +512,16 @@
   function changeQty(e, id, delta) {
     e.stopPropagation();
     if (!cart[id]) return;
-    cart[id] = Math.max(1, (cart[id] || 1) + delta);
-    document.getElementById('qty-'+id).textContent = cart[id];
+    const newQty = (cart[id] || 1) + delta;
+    if (newQty <= 0) {
+      delete cart[id];
+      const card = document.getElementById('card-'+id);
+      card.classList.remove('selected');
+      document.getElementById('qty-'+id).textContent = 1;
+    } else {
+      cart[id] = newQty;
+      document.getElementById('qty-'+id).textContent = cart[id];
+    }
     updateFooter();
   }
 
