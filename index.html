@@ -34,30 +34,35 @@
       padding: 60px 20px 50px;
       text-align: center;
     }
+    /* Fundo desfocado com a logo */
+    .header-bg {
+      position: absolute; inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(22px) brightness(0.25) saturate(1.5);
+      transform: scale(1.15);
+      z-index: 0;
+    }
     header::before {
       content: '';
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 50% 0%, rgba(200,37,26,0.35) 0%, transparent 70%);
+      background: radial-gradient(ellipse at 50% 0%, rgba(200,37,26,0.3) 0%, rgba(0,0,0,0.55) 100%);
+      z-index: 1;
     }
-    header::after {
-      content: '🍕';
-      position: absolute;
-      font-size: 220px;
-      opacity: 0.04;
-      top: -20px; right: -30px;
-      transform: rotate(-20deg);
-      pointer-events: none;
-    }
+    header > *:not(.header-bg) { position: relative; z-index: 2; }
     .logo-badge {
       display: inline-block;
-      border: 2px solid var(--gold);
+      border: 3px solid var(--gold);
       border-radius: 50%;
-      width: 80px; height: 80px;
-      line-height: 76px;
-      font-size: 36px;
-      margin-bottom: 16px;
+      width: 150px; height: 150px;
+      line-height: 144px;
+      font-size: 64px;
+      margin-bottom: 20px;
       position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(212,160,23,0.4), 0 8px 32px rgba(0,0,0,0.5);
     }
+    .logo-badge img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
     header h1 {
       font-family: 'Playfair Display', serif;
       font-size: clamp(2.4rem, 6vw, 4rem);
@@ -355,6 +360,7 @@
 <body>
 
 <header>
+  <div class="header-bg" id="header-bg"></div>
   <div class="logo-badge" id="logo-badge">🍕</div>
   <h1 id="header-nome">Bella <em>Notte</em></h1>
   <p id="header-slogan">Pizzaria Artesanal · Desde 1998</p>
@@ -412,200 +418,139 @@
 </div>
 
 <script>
-  const STORAGE_KEY = 'pizzaria_config_v1';
+  let cfg = null;
+  let PIZZAS = [], BEBIDAS = [], WHATSAPP_NUMBER = '';
+  let cart = {}, pedidoNum = null;
 
-  const DEFAULTS = {
-    nome: 'Bella Notte', slogan: 'Pizzaria Artesanal · Desde 1998',
-    whatsapp: '5511999999999', barra: 'Pedidos também pelo WhatsApp:',
-    logoEmoji: '🍕', logoImg: '',
-    pizzas: [
-      { id:'p1', nome:'Calabresa',         emoji:'🍕', foto:'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&q=80', desc:'Calabresa fatiada, cebola e azeitonas',         preco:49.90, ativo:true },
-      { id:'p2', nome:'Mussarela',          emoji:'🧀', foto:'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&q=80', desc:'Mussarela derretida, tomate e manjericão',      preco:44.90, ativo:true },
-      { id:'p3', nome:'Frango c/ Catupiry', emoji:'🐔', foto:'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80', desc:'Frango desfiado com catupiry cremoso',          preco:54.90, ativo:true },
-      { id:'p4', nome:'Portuguesa',         emoji:'🥚', foto:'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&q=80', desc:'Presunto, ovos, cebola, azeitonas e ervilhas', preco:52.90, ativo:true },
-      { id:'p5', nome:'Quatro Queijos',     emoji:'🫕', foto:'https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=600&q=80', desc:'Mussarela, parmesão, gorgonzola e cheddar',    preco:59.90, ativo:true },
-      { id:'p6', nome:'Pepperoni',          emoji:'🌶️', foto:'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=600&q=80', desc:'Generoso pepperoni com mussarela especial',    preco:57.90, ativo:true },
-    ],
-    bebidas: [
-      { id:'b1', nome:'Coca-Cola 2L',    emoji:'🥤', foto:'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600&q=80',  desc:'Geladinha e refrescante',    preco:12.90, ativo:true },
-      { id:'b2', nome:'Dolly Cola 2L',   emoji:'🧃', foto:'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&q=80', desc:'A famosa guaraná da galera', preco:8.90,  ativo:true },
-      { id:'b3', nome:'Água Mineral',    emoji:'💧', foto:'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=600&q=80',  desc:'500ml sem gás',              preco:4.00,  ativo:true },
-      { id:'b4', nome:'Suco de Laranja', emoji:'🍊', foto:'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600&q=80', desc:'Natural, 500ml',             preco:9.90,  ativo:true },
-    ]
-  };
-
-  // Carrega config do admin ou usa padrão
-  let cfg = DEFAULTS;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) cfg = JSON.parse(saved);
-  } catch(e) {}
-
-  const PIZZAS  = cfg.pizzas.filter(p => p.ativo !== false);
-  const BEBIDAS = cfg.bebidas.filter(b => b.ativo !== false);
-  const WHATSAPP_NUMBER = cfg.whatsapp || DEFAULTS.whatsapp;
-
-  // Aplica info no header
-  (function aplicarBranding() {
-    // Nome: primeira palavra normal, resto em itálico
-    const partes = (cfg.nome || 'Bella Notte').split(' ');
-    const h1 = document.getElementById('header-nome');
-    if (partes.length > 1) {
-      h1.innerHTML = partes[0] + ' <em>' + partes.slice(1).join(' ') + '</em>';
-    } else {
-      h1.textContent = cfg.nome;
+  // ── CARREGAR DO BANCO VIA API ──────────────────────────────────────────
+  async function init() {
+    try {
+      const res = await fetch('/api/config');
+      if (!res.ok) throw new Error('status ' + res.status);
+      cfg = await res.json();
+    } catch(e) {
+      document.getElementById('header-nome').textContent = 'Erro ao carregar';
+      document.getElementById('header-slogan').textContent = 'Tente recarregar a página';
+      return;
     }
+
+    PIZZAS  = (cfg.pizzas  || []).filter(p => p.ativo !== false);
+    BEBIDAS = (cfg.bebidas || []).filter(b => b.ativo !== false);
+    WHATSAPP_NUMBER = cfg.whatsapp || '';
+
+    aplicarBranding();
+    renderAll();
+    updateFooter();
+  }
+
+  // ── BRANDING ───────────────────────────────────────────────────────────
+  function aplicarBranding() {
+    const partes = (cfg.nome || 'Pizzaria').split(' ');
+    const h1 = document.getElementById('header-nome');
+    h1.innerHTML = partes.length > 1
+      ? partes[0] + ' <em>' + partes.slice(1).join(' ') + '</em>'
+      : cfg.nome;
+
     document.getElementById('header-slogan').textContent = cfg.slogan || '';
     document.getElementById('whatsapp-bar').childNodes[0].textContent = (cfg.barra || '') + ' ';
     document.getElementById('whatsapp-num').textContent = cfg.whatsapp || '';
+    document.title = cfg.nome || 'Pizzaria';
 
     const badge = document.getElementById('logo-badge');
+    const bg    = document.getElementById('header-bg');
     if (cfg.logoImg) {
-      badge.innerHTML = `<img src="${cfg.logoImg}" alt="logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+      badge.innerHTML = `<img src="${cfg.logoImg}" alt="logo"/>`;
+      // Fundo desfocado com a mesma imagem da logo
+      bg.style.backgroundImage = `url('${cfg.logoImg}')`;
     } else {
       badge.textContent = cfg.logoEmoji || '🍕';
+      bg.style.backgroundImage = '';
     }
-    document.title = cfg.nome || 'Pizzaria';
-  })();
-
-  let cart = {};
-  let pedidoNum = null;
-
-  function gerarNumeroPedido() {
-    return String(Math.floor(1000 + Math.random() * 9000));
   }
 
+  // ── RENDER ─────────────────────────────────────────────────────────────
+  function cardHTML(item, tipo) {
+    const thumb = item.foto
+      ? `<img class="card-thumb" src="${item.foto}" alt="${item.nome}" onerror="this.outerHTML='<div class=\\'card-thumb emoji-mode\\'>${item.emoji||'🍕'}</div>'">`
+      : `<div class="card-thumb emoji-mode">${item.emoji||'🍕'}</div>`;
+    const titulo = tipo === 'pizza' ? 'Pizza de ' + item.nome : item.nome;
+    return `<div class="card" id="card-${item.id}" onclick="toggleItem('${item.id}')">
+      <div class="check">✓</div>
+      ${thumb}
+      <div class="card-body">
+        <h3>${titulo}</h3>
+        <p>${item.desc || ''}</p>
+        <div class="price">R$ ${Number(item.preco).toFixed(2).replace('.',',')}</div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty(event,'${item.id}',-1)">−</button>
+          <span class="qty-num" id="qty-${item.id}">1</span>
+          <button class="qty-btn" onclick="changeQty(event,'${item.id}',+1)">+</button>
+        </div>
+      </div></div>`;
+  }
+
+  function renderAll() {
+    document.getElementById('grid-pizzas').innerHTML  = PIZZAS.map(i  => cardHTML(i, 'pizza')).join('');
+    document.getElementById('grid-bebidas').innerHTML = BEBIDAS.map(i => cardHTML(i, 'bebida')).join('');
+  }
+
+  // ── CARRINHO ───────────────────────────────────────────────────────────
   function todosItens() { return [...PIZZAS, ...BEBIDAS]; }
-
   function nomeLabel(item) {
-    const isPizza = PIZZAS.find(p => p.id === item.id);
-    return isPizza ? `Pizza de ${item.nome}` : item.nome;
+    return PIZZAS.find(p => p.id === item.id) ? `Pizza de ${item.nome}` : item.nome;
   }
-
   function toggleItem(id) {
-    if (cart[id]) {
+    if (cart[id]) { delete cart[id]; document.getElementById('card-'+id).classList.remove('selected'); }
+    else { cart[id] = 1; document.getElementById('card-'+id).classList.add('selected'); document.getElementById('qty-'+id).textContent = 1; }
+    updateFooter();
+  }
+  function changeQty(e, id, delta) {
+    e.stopPropagation(); if (!cart[id]) return;
+    const novaQty = (cart[id] || 1) + delta;
+    if (novaQty <= 0) {
+      // Remove o item do carrinho e desmarca o card
       delete cart[id];
       document.getElementById('card-'+id).classList.remove('selected');
     } else {
-      cart[id] = 1;
-      document.getElementById('card-'+id).classList.add('selected');
-      document.getElementById('qty-'+id).textContent = 1;
+      cart[id] = novaQty;
+      document.getElementById('qty-'+id).textContent = novaQty;
     }
     updateFooter();
   }
-
-  function changeQty(e, id, delta) {
-    e.stopPropagation();
-    if (!cart[id]) return;
-    cart[id] = Math.max(1, (cart[id] || 1) + delta);
-    document.getElementById('qty-'+id).textContent = cart[id];
-    updateFooter();
-  }
-
   function updateFooter() {
-    const ids = Object.keys(cart);
-    const all = todosItens();
-    let total = 0, totalItens = 0;
-    ids.forEach(id => {
-      const item = all.find(i => i.id === id);
-      if (item) { total += item.preco * cart[id]; totalItens += cart[id]; }
-    });
-    document.getElementById('footer-items').textContent =
-      totalItens === 0 ? 'Nenhum item selecionado' : `${totalItens} item(s) selecionado(s)`;
+    const all = todosItens(); let total = 0, n = 0;
+    Object.keys(cart).forEach(id => { const i = all.find(x => x.id === id); if(i){ total += i.preco * cart[id]; n += cart[id]; } });
+    document.getElementById('footer-items').textContent = n === 0 ? 'Nenhum item selecionado' : `${n} item(s) selecionado(s)`;
     document.getElementById('footer-total').textContent = 'R$ ' + total.toFixed(2).replace('.',',');
-    document.getElementById('btn-confirm').disabled = totalItens === 0;
+    document.getElementById('btn-confirm').disabled = n === 0;
   }
 
+  // ── MODAL & WHATSAPP ───────────────────────────────────────────────────
   function abrirModal() {
-    const ids = Object.keys(cart);
-    if (!ids.length) return;
-    pedidoNum = gerarNumeroPedido();
-    const all = todosItens();
-    let total = 0;
-    const ul = document.getElementById('modal-items');
-    ul.innerHTML = ids.map(id => {
+    const ids = Object.keys(cart); if (!ids.length) return;
+    pedidoNum = String(Math.floor(1000 + Math.random() * 9000));
+    const all = todosItens(); let total = 0;
+    document.getElementById('modal-items').innerHTML = ids.map(id => {
       const item = all.find(i => i.id === id);
-      const subtotal = item.preco * cart[id];
-      total += subtotal;
-      return `<li><span>${cart[id]}x ${nomeLabel(item)}</span><span>R$ ${subtotal.toFixed(2).replace('.',',')}</span></li>`;
+      const sub = item.preco * cart[id]; total += sub;
+      return `<li><span>${cart[id]}x ${nomeLabel(item)}</span><span>R$ ${sub.toFixed(2).replace('.',',')}</span></li>`;
     }).join('');
-    document.getElementById('modal-num').textContent = `Pedido nº ${pedidoNum}`;
+    document.getElementById('modal-num').textContent   = `Pedido nº ${pedidoNum}`;
     document.getElementById('modal-total').textContent = `Total: R$ ${total.toFixed(2).replace('.',',')}`;
     document.getElementById('modal').classList.add('open');
   }
-
-  function fecharModal() {
-    document.getElementById('modal').classList.remove('open');
-  }
-
+  function fecharModal() { document.getElementById('modal').classList.remove('open'); }
   function enviarWhatsApp() {
-    const ids = Object.keys(cart);
-    const all = todosItens();
-    const linhas = ids.map(id => {
-      const item = all.find(i => i.id === id);
-      return `${cart[id]}x ${nomeLabel(item)}`;
-    });
-    let total = 0;
-    ids.forEach(id => {
-      const item = all.find(i => i.id === id);
-      if (item) total += item.preco * cart[id];
-    });
-    const msg =
-      `✅ *Pedido feito com sucesso!*\n` +
-      `📋 Pedido nº ${pedidoNum}\n\n` +
-      `*Itens:*\n` +
-      linhas.map(l => `• ${l}`).join('\n') +
-      `\n\n💰 *Total: R$ ${total.toFixed(2).replace('.',',')}*\n\n` +
-      `Aguardo confirmação! 😊`;
+    const all = todosItens(); let total = 0;
+    const linhas = Object.keys(cart).map(id => { const i = all.find(x => x.id === id); total += i.preco * cart[id]; return `${cart[id]}x ${nomeLabel(i)}`; });
+    const msg = `✅ *Pedido feito com sucesso!*\n📋 Pedido nº ${pedidoNum}\n\n*Itens:*\n${linhas.map(l=>'• '+l).join('\n')}\n\n💰 *Total: R$ ${total.toFixed(2).replace('.',',')}*\n\nAguardo confirmação! 😊`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
     fecharModal();
   }
 
-  function renderAll() {
-    const pizzaContainer = document.getElementById('grid-pizzas');
-    pizzaContainer.innerHTML = PIZZAS.map(item => `
-      <div class="card" id="card-${item.id}" onclick="toggleItem('${item.id}')">
-        <div class="check">✓</div>
-        ${item.foto
-          ? `<img class="card-thumb" src="${item.foto}" alt="${item.nome}" onerror="this.outerHTML='<div class=\\'card-thumb emoji-mode\\'>${item.emoji}</div>'">`
-          : `<div class="card-thumb emoji-mode">${item.emoji}</div>`}
-        <div class="card-body">
-          <h3>Pizza de ${item.nome}</h3>
-          <p>${item.desc}</p>
-          <div class="price">R$ ${Number(item.preco).toFixed(2).replace('.',',')}</div>
-          <div class="qty-control">
-            <button class="qty-btn" onclick="changeQty(event,'${item.id}',-1)">−</button>
-            <span class="qty-num" id="qty-${item.id}">1</span>
-            <button class="qty-btn" onclick="changeQty(event,'${item.id}',+1)">+</button>
-          </div>
-        </div>
-      </div>`).join('');
+  document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) fecharModal(); });
 
-    const bebContainer = document.getElementById('grid-bebidas');
-    bebContainer.innerHTML = BEBIDAS.map(item => `
-      <div class="card" id="card-${item.id}" onclick="toggleItem('${item.id}')">
-        <div class="check">✓</div>
-        ${item.foto
-          ? `<img class="card-thumb" src="${item.foto}" alt="${item.nome}" onerror="this.outerHTML='<div class=\\'card-thumb emoji-mode\\'>${item.emoji}</div>'">`
-          : `<div class="card-thumb emoji-mode">${item.emoji}</div>`}
-        <div class="card-body">
-          <h3>${item.nome}</h3>
-          <p>${item.desc}</p>
-          <div class="price">R$ ${Number(item.preco).toFixed(2).replace('.',',')}</div>
-          <div class="qty-control">
-            <button class="qty-btn" onclick="changeQty(event,'${item.id}',-1)">−</button>
-            <span class="qty-num" id="qty-${item.id}">1</span>
-            <button class="qty-btn" onclick="changeQty(event,'${item.id}',+1)">+</button>
-          </div>
-        </div>
-      </div>`).join('');
-  }
-
-  renderAll();
-  updateFooter();
-  document.getElementById('modal').addEventListener('click', function(e) {
-    if (e.target === this) fecharModal();
-  });
+  init();
 </script>
 </body>
 </html>
