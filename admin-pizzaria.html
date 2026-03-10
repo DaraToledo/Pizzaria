@@ -380,6 +380,16 @@
 
 <script>
 const KEY = 'pizzaria_config_v1';
+const API = '/api/config';
+
+function getSecret() {
+  let s = sessionStorage.getItem('adm_secret');
+  if (!s) {
+    s = prompt('🔑 Digite o ADMIN_SECRET (senha configurada na Vercel):');
+    if (s) sessionStorage.setItem('adm_secret', s);
+  }
+  return s || '';
+}
 
 const DEF = {
   nome:'Bella Notte', slogan:'Pizzaria Artesanal · Desde 1998',
@@ -404,10 +414,22 @@ const DEF = {
 let cfg = JSON.parse(JSON.stringify(DEF));
 let editId = null, delId = null, delTipo = null, fotoB64 = '';
 
-// ── INIT ──
-function init() {
-  try { const r = localStorage.getItem(KEY); if(r) cfg = JSON.parse(r); } catch(e){}
+// ── INIT — carrega do banco, fallback localStorage ──
+async function init() {
+  try {
+    const res = await fetch(API);
+    if (res.ok) {
+      cfg = await res.json();
+      try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch(e){}
+    } else {
+      const r = localStorage.getItem(KEY);
+      if (r) cfg = JSON.parse(r);
+    }
+  } catch(e) {
+    try { const r = localStorage.getItem(KEY); if(r) cfg = JSON.parse(r); } catch(e2){}
+  }
   preencherForm();
+  renderListas();
 }
 
 function preencherForm() {
@@ -602,14 +624,33 @@ function confirmarDel() {
   toast('Produto excluído. Clique em "Salvar Tudo" para confirmar.');
 }
 
-// ── SALVAR ──
-function salvarTudo() {
+// ── SALVAR — envia para o banco ──
+async function salvarTudo() {
   cfg.nome     = document.getElementById('inp-nome').value.trim()  || cfg.nome;
   cfg.slogan   = document.getElementById('inp-slogan').value.trim();
   cfg.whatsapp = document.getElementById('inp-wp').value.replace(/\D/g,'');
   cfg.barra    = document.getElementById('inp-barra').value.trim();
-  try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch(e){}
-  toast('✅ Tudo salvo! O cardápio já está atualizado.');
+
+  const secret = getSecret();
+  if (!secret) { toast('❌ Senha não informada.', true); return; }
+
+  try {
+    const res = await fetch(API, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + secret },
+      body: JSON.stringify(cfg)
+    });
+    if (res.status === 401) {
+      sessionStorage.removeItem('adm_secret');
+      toast('❌ Senha incorreta. Tente novamente.', true);
+      return;
+    }
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch(e){}
+    toast('✅ Salvo no banco! Cardápio atualizado em todos os dispositivos.');
+  } catch(e) {
+    toast('❌ Erro ao salvar: ' + e.message, true);
+  }
 }
 
 // ── BACKUP ──
@@ -626,9 +667,8 @@ function importar(e) {
   r.onload = ev => {
     try {
       cfg = JSON.parse(ev.target.result);
-      localStorage.setItem(KEY, JSON.stringify(cfg));
       preencherForm(); renderListas();
-      toast('Backup importado com sucesso!');
+      toast('Backup importado! Clique em "Salvar Tudo" para enviar ao banco.');
     } catch(err){ toast('Arquivo inválido!',true); }
   };
   r.readAsText(f); e.target.value='';
@@ -636,7 +676,6 @@ function importar(e) {
 
 // ── CARDÁPIO ──
 function verCardapio() {
-  salvarTudo();
   window.open('cardapio-pizzaria.html','_blank');
 }
 
@@ -674,6 +713,7 @@ function fazerLogin() {
 }
 function logout() {
   sessionStorage.removeItem('adm_auth');
+  sessionStorage.removeItem('adm_secret');
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
