@@ -620,6 +620,38 @@
     if (saved) cfg = JSON.parse(saved);
   } catch(e) {}
 
+  // Busca config do banco em background e re-renderiza se atualizado
+  (async function() {
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const data = await res.json();
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
+        cfg = data;
+        // Re-aplica branding e re-renderiza
+        const partes = (cfg.nome || 'Bella Notte').split(' ');
+        const h1 = document.getElementById('header-nome');
+        if (h1) {
+          if (partes.length > 1) h1.innerHTML = partes[0] + ' <em>' + partes.slice(1).join(' ') + '</em>';
+          else h1.textContent = cfg.nome;
+        }
+        const elSlogan = document.getElementById('header-slogan');
+        if (elSlogan) elSlogan.textContent = cfg.slogan || '';
+        const elBarra = document.getElementById('whatsapp-bar');
+        if (elBarra) elBarra.childNodes[0].textContent = (cfg.barra || '') + ' ';
+        const elNum = document.getElementById('whatsapp-num');
+        if (elNum) elNum.textContent = cfg.whatsapp || '';
+        const badge = document.getElementById('logo-badge');
+        if (badge) {
+          if (cfg.logoImg) badge.innerHTML = `<img src="${cfg.logoImg}" alt="logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+          else if (cfg.logoEmoji && cfg.logoEmoji !== '🍕') badge.textContent = cfg.logoEmoji;
+        }
+        document.title = cfg.nome || 'Pizzaria';
+        renderAll();
+      }
+    } catch(e) { /* mantém cache local */ }
+  })();
+
   const PIZZAS  = cfg.pizzas.filter(p => p.ativo !== false);
   const BEBIDAS = cfg.bebidas.filter(b => b.ativo !== false);
   const WHATSAPP_NUMBER = cfg.whatsapp || DEFAULTS.whatsapp;
