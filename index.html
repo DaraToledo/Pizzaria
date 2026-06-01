@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Recanto Nordestino</title>
+  <title>Pizzaria Bella Notte</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -450,8 +450,8 @@
     </div>
   </div>
   <div class="logo-badge" id="logo-badge">🍕</div>
-  <h1 id="header-nome">Recanto <em>Nordestino</em></h1>
-  <p id="header-slogan">Difícil de descrever, fácil de pedir mais.</p>
+  <h1 id="header-nome">Bella <em>Notte</em></h1>
+  <p id="header-slogan">Pizzaria Artesanal · Desde 1998</p>
 </header>
 
 <div class="whatsapp-bar" id="whatsapp-bar">
@@ -537,12 +537,18 @@
         <h3>💵 Pagamento</h3>
         <div class="form-group">
           <label>Forma de pagamento</label>
-          <select id="cli-pagamento">
+          <select id="cli-pagamento" onchange="togglePix()">
             <option value="Dinheiro">💵 Dinheiro</option>
             <option value="PIX">📱 PIX</option>
             <option value="Cartão de Débito">💳 Cartão de Débito</option>
             <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
           </select>
+        </div>
+        <div id="campo-pix" style="display:none;margin-top:10px;background:var(--cream);border-radius:12px;padding:14px 16px;">
+          <p style="margin:0 0 8px;font-weight:600;font-size:0.9rem;">📱 Chave PIX:</p>
+          <p id="pix-chave-display" style="margin:0;font-size:1.1rem;font-weight:700;color:var(--green);letter-spacing:0.5px;"></p>
+          <p id="pix-nome-display" style="margin:4px 0 0;font-size:0.8rem;color:#666;"></p>
+          <button type="button" onclick="copiarPix()" style="margin-top:10px;background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:0.85rem;cursor:pointer;width:100%;">📋 Copiar chave PIX</button>
         </div>
         <div class="form-group">
           <div class="troco-row">
@@ -596,8 +602,9 @@
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpb21zdnB1YnlodHB2ZGFseHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNzY3NjQsImV4cCI6MjA5NTg1Mjc2NH0.ngqgPM-rjkPTwXhB5AMsQ3TV9RLjZhzZ8Bn185NDDEk';
 
   const DEFAULTS = {
-    nome: 'Recanto Nordestino', slogan: 'Pizzaria Artesanal · Desde 1998',
+    nome: 'Bella Notte', slogan: 'Pizzaria Artesanal · Desde 1998',
     whatsapp: '5588981877521', barra: 'Pedidos também pelo WhatsApp:',
+    pixChave: '5588981877521', pixNome: 'Recanto Nordestino',
     logoEmoji: '🍕', logoImg: '',
     pizzas: [
       { id:'p1', nome:'Calabresa',         emoji:'🍕', foto:'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&q=80', desc:'Calabresa fatiada, cebola e azeitonas',         preco:49.90, ativo:true },
@@ -635,7 +642,7 @@
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
         cfg = data;
         // Re-aplica branding e re-renderiza
-        const partes = (cfg.nome || 'Recanto Nordestino').split(' ');
+        const partes = (cfg.nome || 'Bella Notte').split(' ');
         const h1 = document.getElementById('header-nome');
         if (h1) {
           if (partes.length > 1) h1.innerHTML = partes[0] + ' <em>' + partes.slice(1).join(' ') + '</em>';
@@ -665,7 +672,7 @@
   // Aplica info no header
   (function aplicarBranding() {
     // Nome: primeira palavra normal, resto em itálico
-    const partes = (cfg.nome || 'Recanto Nordestino').split(' ');
+    const partes = (cfg.nome || 'Bella Notte').split(' ');
     const h1 = document.getElementById('header-nome');
     if (partes.length > 1) {
       h1.innerHTML = partes[0] + ' <em>' + partes.slice(1).join(' ') + '</em>';
@@ -763,6 +770,31 @@
     document.getElementById('campo-troco').style.display = cb.checked ? 'block' : 'none';
   }
 
+  function togglePix() {
+    const pagto = document.getElementById('cli-pagamento').value;
+    const campoP = document.getElementById('campo-pix');
+    if (pagto === 'PIX') {
+      const chave = cfg.pixChave || DEFAULTS.whatsapp;
+      const nome  = cfg.pixNome  || (cfg.nome || DEFAULTS.nome);
+      document.getElementById('pix-chave-display').textContent = chave;
+      document.getElementById('pix-nome-display').textContent = nome;
+      campoP.style.display = 'block';
+    } else {
+      campoP.style.display = 'none';
+    }
+  }
+
+  function copiarPix() {
+    const chave = cfg.pixChave || DEFAULTS.whatsapp;
+    navigator.clipboard.writeText(chave).then(() => {
+      const btn = document.querySelector('#campo-pix button');
+      btn.textContent = '✅ Copiado!';
+      setTimeout(() => { btn.textContent = '📋 Copiar chave PIX'; }, 2000);
+    }).catch(() => {
+      alert('Chave PIX: ' + chave);
+    });
+  }
+
   function irParaResumo() {
     const nome   = document.getElementById('cli-nome').value.trim();
     const rua    = document.getElementById('cli-rua').value.trim();
@@ -856,6 +888,33 @@
       `💵 *Pagamento:* ${pagtoTxt}` +
       (obs ? `\n\n📝 *Observações:* ${obs}` : '') +
       `\n\n━━━━━━━━━━━━━━━━━━━━\n_Aguardando confirmação do pedido_ 🙏`;
+
+    // Salvar pedido no Supabase (em background)
+    const pedidoData = {
+      numero: pedidoNum,
+      cliente: { nome, tel, rua, bairro, comp, ref },
+      itens: ids.map(id => {
+        const it = todosItens().find(i => i.id === id);
+        return { id, nome: it ? it.nome : id, qtd: cart[id], preco: it ? it.preco : 0 };
+      }),
+      total: ids.reduce((acc, id) => {
+        const it = todosItens().find(i => i.id === id);
+        return acc + (it ? it.preco * cart[id] : 0);
+      }, 0),
+      pagamento: pagto,
+      observacoes: obs || '',
+      status: 'novo'
+    };
+    fetch(`${SUPABASE_URL}/rest/v1/pizzaria_pedidos`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(pedidoData)
+    }).catch(() => {});
 
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
     fecharModal();
