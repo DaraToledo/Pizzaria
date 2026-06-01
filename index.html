@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pizzaria Bella Notte</title>
+  <title>Recanto Nordestino</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -450,8 +450,8 @@
     </div>
   </div>
   <div class="logo-badge" id="logo-badge">🍕</div>
-  <h1 id="header-nome">Bella <em>Notte</em></h1>
-  <p id="header-slogan">Pizzaria Artesanal · Desde 1998</p>
+  <h1 id="header-nome">Recanto <em>Nordestino</em></h1>
+  <p id="header-slogan">Difícil de descrever, fácil de pedir mais.</p>
 </header>
 
 <div class="whatsapp-bar" id="whatsapp-bar">
@@ -602,7 +602,7 @@
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpb21zdnB1YnlodHB2ZGFseHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNzY3NjQsImV4cCI6MjA5NTg1Mjc2NH0.ngqgPM-rjkPTwXhB5AMsQ3TV9RLjZhzZ8Bn185NDDEk';
 
   const DEFAULTS = {
-    nome: 'Bella Notte', slogan: 'Pizzaria Artesanal · Desde 1998',
+    nome: 'Recanto Nordestino', slogan: 'Pizzaria Artesanal · Desde 1998',
     whatsapp: '5588981877521', barra: 'Pedidos também pelo WhatsApp:',
     pixChave: '5588981877521', pixNome: 'Recanto Nordestino',
     logoEmoji: '🍕', logoImg: '',
@@ -642,7 +642,7 @@
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
         cfg = data;
         // Re-aplica branding e re-renderiza
-        const partes = (cfg.nome || 'Bella Notte').split(' ');
+        const partes = (cfg.nome || 'Recanto Nordestino').split(' ');
         const h1 = document.getElementById('header-nome');
         if (h1) {
           if (partes.length > 1) h1.innerHTML = partes[0] + ' <em>' + partes.slice(1).join(' ') + '</em>';
@@ -672,7 +672,7 @@
   // Aplica info no header
   (function aplicarBranding() {
     // Nome: primeira palavra normal, resto em itálico
-    const partes = (cfg.nome || 'Bella Notte').split(' ');
+    const partes = (cfg.nome || 'Recanto Nordestino').split(' ');
     const h1 = document.getElementById('header-nome');
     if (partes.length > 1) {
       h1.innerHTML = partes[0] + ' <em>' + partes.slice(1).join(' ') + '</em>';
