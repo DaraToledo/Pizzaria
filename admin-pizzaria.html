@@ -379,17 +379,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
+const SUPABASE_URL  = 'https://diomsvpubyhtpvdalxyk.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpb21zdnB1YnlodHB2ZGFseHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNzY3NjQsImV4cCI6MjA5NTg1Mjc2NH0.ngqgPM-rjkPTwXhB5AMsQ3TV9RLjZhzZ8Bn185NDDEk';
+const BUCKET = 'pizzaria-imagens';
 const KEY = 'pizzaria_config_v1';
-const API = '/api/config';
-
-function getSecret() {
-  let s = sessionStorage.getItem('adm_secret');
-  if (!s) {
-    s = prompt('🔑 Digite o ADMIN_SECRET (senha configurada na Vercel):');
-    if (s) sessionStorage.setItem('adm_secret', s);
-  }
-  return s || '';
-}
 
 const DEF = {
   nome:'Bella Notte', slogan:'Pizzaria Artesanal · Desde 1998',
@@ -412,15 +405,23 @@ const DEF = {
 };
 
 let cfg = JSON.parse(JSON.stringify(DEF));
-let editId = null, delId = null, delTipo = null, fotoB64 = '';
+let editId = null, delId = null, delTipo = null, fotoB64 = '', _fotoFile = null;
 
-// ── INIT — carrega do banco, fallback localStorage ──
+// ── INIT — carrega do Supabase, fallback localStorage ──
 async function init() {
   try {
-    const res = await fetch(API);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/pizzaria_config?id=eq.1&select=data`, {
+      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+    });
     if (res.ok) {
-      cfg = await res.json();
-      try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch(e){}
+      const rows = await res.json();
+      if (rows[0]?.data) {
+        cfg = rows[0].data;
+        try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch(e){}
+      } else {
+        const r = localStorage.getItem(KEY);
+        if (r) cfg = JSON.parse(r);
+      }
     } else {
       const r = localStorage.getItem(KEY);
       if (r) cfg = JSON.parse(r);
@@ -447,12 +448,21 @@ function atualizarCirculo() {
   if (cfg.logoImg) c.innerHTML = '<img src="'+cfg.logoImg+'" alt="logo"/>';
   else c.textContent = cfg.logoEmoji || '🍕';
 }
-function uploadLogo(e) {
+async function uploadLogo(e) {
   const f = e.target.files[0]; if(!f) return;
   if(f.size > 2*1024*1024){ toast('Imagem muito grande (máx 2MB)',true); return; }
-  const r = new FileReader();
-  r.onload = ev => { cfg.logoImg = ev.target.result; cfg.logoEmoji = ''; atualizarCirculo(); };
-  r.readAsDataURL(f);
+  toast('Enviando logo...');
+  const ext = f.name.split('.').pop().toLowerCase();
+  const nome = `logo/logo-${Date.now()}.${ext}`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${nome}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON, 'Content-Type': f.type, 'x-upsert': 'true' },
+    body: f
+  });
+  if (!res.ok) { toast('Erro no upload do logo!', true); return; }
+  const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${nome}`;
+  cfg.logoImg = url; cfg.logoEmoji = ''; atualizarCirculo();
+  toast('Logo enviado! Clique em Salvar Tudo.');
 }
 function previewEmoji() {
   const v = document.getElementById('inp-emoji').value;
@@ -546,20 +556,34 @@ function abrirModal(id, tipo) {
   }
   document.getElementById('ov-prod').classList.add('open');
 }
-function fecharModal() { document.getElementById('ov-prod').classList.remove('open'); editId=null; fotoB64=''; }
+function fecharModal() { document.getElementById('ov-prod').classList.remove('open'); editId=null; fotoB64=''; _fotoFile=null; }
 
 function uploadFoto(e) {
   const f = e.target.files[0]; if(!f) return;
   if(f.size > 4*1024*1024){ toast('Imagem muito grande (máx 4MB)',true); return; }
+  // Guarda o arquivo para enviar ao Storage quando salvar
+  _fotoFile = f;
   const r = new FileReader();
   r.onload = ev => {
-    fotoB64 = ev.target.result;
+    fotoB64 = ev.target.result; // preview local apenas
     const p = document.getElementById('m-prev');
     p.src = fotoB64; p.style.display='block';
     document.getElementById('upload-ph').style.display='none';
     document.getElementById('m-url').value='';
   };
   r.readAsDataURL(f);
+}
+
+async function uploadParaStorage(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const nome = `produtos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${nome}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON, 'Content-Type': file.type, 'x-upsert': 'true' },
+    body: file
+  });
+  if (!res.ok) { toast('Erro no upload da imagem!', true); return null; }
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${nome}`;
 }
 function previewUrl() {
   const url = document.getElementById('m-url').value.trim();
@@ -570,17 +594,32 @@ function previewUrl() {
   document.getElementById('upload-ph').style.display='none';
 }
 
-function salvarProduto() {
+async function salvarProduto() {
   const nome  = document.getElementById('m-nome').value.trim();
   const tipo  = document.getElementById('m-tipo').value;
   const preco = parseFloat(document.getElementById('m-preco').value);
   const emoji = document.getElementById('m-emoji').value.trim() || '🍕';
   const desc  = document.getElementById('m-desc').value.trim();
   const url   = document.getElementById('m-url').value.trim();
-  const foto  = fotoB64 || url || '';
 
   if(!nome){ toast('Informe o nome!',true); return; }
   if(isNaN(preco)||preco<=0){ toast('Informe um preço válido!',true); return; }
+
+  // Se tem arquivo novo, faz upload para o Supabase Storage
+  let foto = url || '';
+  if (_fotoFile) {
+    toast('Enviando imagem...');
+    const uploaded = await uploadParaStorage(_fotoFile);
+    if (uploaded) foto = uploaded;
+    _fotoFile = null;
+  } else if (fotoB64 && fotoB64.startsWith('http')) {
+    foto = fotoB64;
+  } else if (!url && editId) {
+    // mantém foto existente
+    const arr = tipo==='pizza' ? cfg.pizzas : cfg.bebidas;
+    const item = arr.find(i=>i.id===editId);
+    if (item) foto = item.foto || '';
+  }
 
   if(editId) {
     // encontra onde está (pode ter mudado de tipo)
@@ -624,30 +663,27 @@ function confirmarDel() {
   toast('Produto excluído. Clique em "Salvar Tudo" para confirmar.');
 }
 
-// ── SALVAR — envia para o banco ──
+// ── SALVAR — envia para o Supabase ──
 async function salvarTudo() {
   cfg.nome     = document.getElementById('inp-nome').value.trim()  || cfg.nome;
   cfg.slogan   = document.getElementById('inp-slogan').value.trim();
   cfg.whatsapp = document.getElementById('inp-wp').value.replace(/\D/g,'');
   cfg.barra    = document.getElementById('inp-barra').value.trim();
 
-  const secret = getSecret();
-  if (!secret) { toast('❌ Senha não informada.', true); return; }
-
   try {
-    const res = await fetch(API, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + secret },
-      body: JSON.stringify(cfg)
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/pizzaria_config`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ id: 1, data: cfg, updated_at: new Date().toISOString() })
     });
-    if (res.status === 401) {
-      sessionStorage.removeItem('adm_secret');
-      toast('❌ Senha incorreta. Tente novamente.', true);
-      return;
-    }
     if (!res.ok) throw new Error('Erro ' + res.status);
     try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch(e){}
-    toast('✅ Salvo no banco! Cardápio atualizado em todos os dispositivos.');
+    toast('✅ Salvo no Supabase! Cardápio atualizado.');
   } catch(e) {
     toast('❌ Erro ao salvar: ' + e.message, true);
   }
