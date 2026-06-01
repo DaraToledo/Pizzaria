@@ -592,6 +592,8 @@
 
 <script>
   const STORAGE_KEY = 'pizzaria_config_v1';
+  const SUPABASE_URL  = 'https://diomsvpubyhtpvdalxyk.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpb21zdnB1YnlodHB2ZGFseHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNzY3NjQsImV4cCI6MjA5NTg1Mjc2NH0.ngqgPM-rjkPTwXhB5AMsQ3TV9RLjZhzZ8Bn185NDDEk';
 
   const DEFAULTS = {
     nome: 'Bella Notte', slogan: 'Pizzaria Artesanal · Desde 1998',
@@ -623,9 +625,13 @@
   // Busca config do banco em background e re-renderiza se atualizado
   (async function() {
     try {
-      const res = await fetch('/api/config');
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/pizzaria_config?id=eq.1&select=data`, {
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+      });
       if (res.ok) {
-        const data = await res.json();
+        const rows = await res.json();
+        const data = rows[0]?.data;
+        if (!data) return;
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
         cfg = data;
         // Re-aplica branding e re-renderiza
