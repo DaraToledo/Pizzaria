@@ -660,14 +660,18 @@
           else if (cfg.logoEmoji && cfg.logoEmoji !== '🍕') badge.textContent = cfg.logoEmoji;
         }
         document.title = cfg.nome || 'Pizzaria';
+        // Atualiza listas e número com dados do banco
+        PIZZAS = cfg.pizzas.filter(p => p.ativo !== false);
+        BEBIDAS = cfg.bebidas.filter(b => b.ativo !== false);
+        WHATSAPP_NUMBER = cfg.whatsapp || DEFAULTS.whatsapp;
         renderAll();
       }
     } catch(e) { /* mantém cache local */ }
   })();
 
-  const PIZZAS  = cfg.pizzas.filter(p => p.ativo !== false);
-  const BEBIDAS = cfg.bebidas.filter(b => b.ativo !== false);
-  const WHATSAPP_NUMBER = cfg.whatsapp || DEFAULTS.whatsapp;
+  let PIZZAS  = cfg.pizzas.filter(p => p.ativo !== false);
+  let BEBIDAS = cfg.bebidas.filter(b => b.ativo !== false);
+  let WHATSAPP_NUMBER = cfg.whatsapp || DEFAULTS.whatsapp;
 
   // Aplica info no header
   (function aplicarBranding() {
